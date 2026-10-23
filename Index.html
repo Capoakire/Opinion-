@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Social Media Presentation Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#14213d;--mute:#5b6784;--bg:#f2f6ff;--card:#fff;--line:#d9e2f7;--yellow:#ffe58a;
+--c1:#3a6df0;--g:#14a36b;--gt:#0b7a4e;--y:#f2b705;--yt:#8a6200;--r:#e5484d;--rt:#b4232a;color-scheme:light}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.5 Nunito,system-ui,"Segoe UI",sans-serif}
+.app{max-width:780px;margin:0 auto;padding:24px 16px 120px}
+h1{font-size:clamp(1.8rem,5vw,2.6rem);line-height:1.1;margin:0 0 6px;font-weight:800}
+.lead{color:var(--mute);margin:0 0 18px}
+.name{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:22px}
+.name input{flex:1;min-width:200px;font:inherit;padding:10px 14px;border:2px solid var(--line);border-radius:12px;background:#fff}
+section{background:var(--card);border:2px solid var(--line);border-left:10px solid var(--c);border-radius:18px;padding:18px 18px 8px;margin-bottom:20px}
+.head{display:flex;gap:12px;align-items:center;margin-bottom:6px}
+.badge{flex:none;width:46px;height:46px;border-radius:50%;background:var(--c);display:grid;place-items:center;font-size:24px}
+.head h2{margin:0;font-size:1.05rem;color:var(--t);font-weight:800}
+.head p{margin:0;font-size:1.25rem;font-weight:800;line-height:1.2}
+.field{margin:16px 0}
+.prefix{font-weight:800;margin-bottom:4px}
+textarea{width:100%;min-height:92px;font:inherit;padding:12px 14px;border:2px solid var(--line);border-radius:12px;resize:vertical;background:#fcfdff}
+textarea:focus,input:focus{outline:3px solid var(--c);outline-offset:1px;border-color:transparent}
+.hint{font-size:.85rem;color:var(--mute);margin:10px 0 6px;font-weight:600}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{font:inherit;font-size:.92rem;cursor:pointer;border:2px solid var(--line);background:#fff;color:var(--ink);padding:5px 11px;border-radius:999px;transition:transform .1s}
+.chip:hover{background:var(--yellow);border-color:#f0c94a}
+.chip:active{transform:scale(.95)}
+.chip.s{border-style:dashed;border-color:var(--c);font-weight:600}
+.chip .e{margin-right:5px}
+.who .chip{border-color:var(--c)}
+.bar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:2px solid var(--line);padding:10px 16px;display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap}
+.bar .prog{font-weight:800;margin-right:auto;max-width:200px}
+.btn{font:inherit;font-weight:800;border:0;border-radius:12px;padding:11px 18px;cursor:pointer}
+.btn.main{background:var(--c1);color:#fff}
+.btn.sec{background:#eef2fb;color:var(--ink)}
+.btn:focus-visible,.chip:focus-visible{outline:3px solid var(--c2);outline-offset:2px}
+#print{display:none}
+@media print{
+ @page{margin:16mm}
+ body{background:#fff;font-size:12pt}
+ .app,.bar{display:none!important}
+ #print{display:block}
+ #print h1{font-size:22pt;margin-bottom:2pt}
+ #print .by{color:#555;margin-bottom:14pt}
+ #print .pp{margin-bottom:13pt;break-inside:avoid;border-left:5pt solid var(--c);padding-left:10pt}
+ #print h2{font-size:13pt;margin:0 0 3pt;color:var(--t)}
+ #print .q{font-weight:800;margin:0 0 4pt}
+ #print p{margin:0 0 5pt;white-space:pre-wrap}
+ #print .src{color:#444;font-style:italic}
+}
+</style>
+</head>
+<body>
+<main class="app">
+ <h1>📣 My Social Media Presentation</h1>
+ <p class="lead">Fill in each part. Tap the 🟡 chips to add words and sentence starters, then change them into your own ideas. Your work saves on this device automatically.</p>
+ <label class="name"><strong>✏️ My name:</strong><input id="who" placeholder="Write your name" autocomplete="name"></label>
+ <div id="parts"></div>
+</main>
+<div class="bar">
+ <div class="prog" id="prog">0 / 6 done</div>
+ <button class="btn sec" id="clear">🗑️ Start again</button>
+ <button class="btn main" id="pdf">📄 Download PDF</button>
+</div>
+<div id="print"></div>
+
+<script>
+const P=[
+{n:1,c:"var(--g)",ct:"var(--gt)",e:"📱",t:"Introduction",q:"What is social media?",fields:[
+ {id:"a1",ph:"Social media is …",
+  st:["Social media is","Social media means","People use social media to","Popular examples are"],
+  w:[["📱","apps and websites"],["💬","send messages"],["📸","share photos and videos"],["👥","connect with friends"],["🌍","people all over the world"],["👍","like and comment"],["🎵","TikTok"],["📷","Instagram"],["▶️","YouTube"],["💻","online"]]}]},
+{n:2,c:"var(--g)",ct:"var(--gt)",e:"🤔",t:"Effects",q:"What are the effects? What do you think is happening?",fields:[
+ {id:"a2",ph:"I think social media is …",
+  st:["I think social media is changing","Many teenagers","Social media can make people feel","On the good side,","On the bad side,"],
+  w:[["😴","sleep less"],["😟","feel worried or sad"],["📉","get lower grades"],["👀","compare themselves with others"],["⏳","waste time"],["🚫","cyberbullying"],["🤝","make new friends"],["📚","learn new things"],["📵","can't stop checking the phone"],["🗣️","talk less face to face"]]}]},
+{n:3,c:"var(--y)",ct:"var(--yt)",e:"🔎",t:"Reason 1 and evidence",q:"Why do you think so?",fields:[
+ {id:"a3",pre:"Reason 1 — One problem is",ph:"…that students spend too much time online.",
+  st:["that","because","This means that","For example,"],
+  w:[["😴","not enough sleep"],["📉","worse school results"],["😟","stress and anxiety"],["🔐","private information is not safe"],["🧠","hard to pay attention"],["💔","unkind comments"]]},
+ {id:"b3",pre:"Reference or source",src:1,ph:"According to … (name, year)",
+  st:["According to","A study shows that","A news article says","I read that","In my experience,"],
+  w:[["🏥","World Health Organization"],["📊","Pew Research Center"],["📰","a news website"],["🎓","a university study"],["🏫","my school survey"]]}]},
+{n:"3",c:"var(--y)",ct:"var(--yt)",e:"🔎",t:"Reason 2 and evidence",q:"Why do you think so?",fields:[
+ {id:"a4",pre:"Reason 2 — Another problem is",ph:"…that people can see unkind or false things.",
+  st:["that","because","As a result,","In addition,"],
+  w:[["🚫","cyberbullying"],["🤥","fake news"],["👀","comparing our lives"],["🔐","privacy"],["⏰","addiction to scrolling"],["🧒","young children see bad content"]]},
+ {id:"b4",pre:"Reference or source",src:1,ph:"According to … (name, year)",
+  st:["According to","A study shows that","A news article says","I read that","In my experience,"],
+  w:[["🏥","World Health Organization"],["📊","Pew Research Center"],["📰","a news website"],["🎓","a university study"],["🏫","my school survey"]]}]},
+{n:4,c:"var(--r)",ct:"var(--rt)",e:"💡",t:"My opinion",q:"What is your opinion?",fields:[
+ {id:"a5",pre:"In my opinion,",ph:"…social media is useful but we must be careful.",
+  st:["social media is","the biggest problem is","the good and bad sides are","To sum up,"],
+  w:[["👍","useful"],["⚠️","dangerous if we use it too much"],["⚖️","good and bad"],["🎯","we need balance"],["🛡️","we need rules"]]},
+ {id:"b5",pre:"I think parents / schools / governments / companies should",ph:"…",who:1,
+  st:["I think parents should","I think schools should","I think governments should","I think companies should"],
+  w:[["⏰","set time limits"],["🎓","teach students to check facts"],["🚫","ban phones in class"],["🔒","protect private information"],["🧹","remove harmful content"],["💬","talk with children about it"],["📵","have phone-free time at home"],["⚖️","make clear laws"]]}]}
+];
+const KEY="smPresentationV1";let S={};
+try{S=JSON.parse(localStorage.getItem(KEY)||"{}")}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const el=(t,c,x)=>{const n=document.createElement(t);if(c)n.className=c;if(x!=null)n.textContent=x;return n};
+const root=document.getElementById("parts");
+const areas={};
+function insert(ta,txt){
+ const s=ta.selectionStart??ta.value.length,e=ta.selectionEnd??s,v=ta.value;
+ const pre=v.slice(0,s),sp=pre&&!/\s$/.test(pre)?" ":"";
+ ta.value=pre+sp+txt+" "+v.slice(e);
+ const pos=(pre+sp+txt+" ").length;ta.focus();ta.setSelectionRange(pos,pos);
+ ta.dispatchEvent(new Event("input"));
+}
+P.forEach((p,i)=>{
+ const sec=el("section");sec.style.setProperty("--c",p.c);sec.style.setProperty("--t",p.ct);
+ const h=el("div","head"),b=el("div","badge",p.e);
+ const hd=el("div");hd.append(el("h2",null,"Part "+(p.n==="3"?3:p.n)+" · "+p.t),el("p",null,p.q));
+ h.append(b,hd);sec.append(h);
+ p.fields.forEach(f=>{
+  const box=el("div","field");
+  if(f.pre)box.append(el("div","prefix",f.pre+(f.src?":":"")));
+  const ta=el("textarea");ta.placeholder=f.ph;ta.value=S[f.id]||"";ta.setAttribute("aria-label",f.pre||p.q);
+  ta.oninput=()=>{S[f.id]=ta.value;save();prog()};areas[f.id]=ta;
+  box.append(ta);
+  box.append(el("div","hint","🟡 Sentence starters (tap to add)"));
+  const c1=el("div","chips");
+  f.st.forEach(s=>{const c=el("button","chip s",s);c.type="button";c.onclick=()=>insert(ta,s);c1.append(c)});
+  box.append(c1);
+  box.append(el("div","hint","💡 Word bank"));
+  const c2=el("div","chips");
+  f.w.forEach(([e,w])=>{const c=el("button","chip");c.type="button";const s=el("span","e",e);c.append(s,w);c.onclick=()=>insert(ta,w);c2.append(c)});
+  box.append(c2);
+  if(f.who){
+   box.append(el("div","hint","👨‍👩‍👧 Who should act? (tap one)"));
+   const c3=el("div","chips who");
+   [["👨‍👩‍👧","parents"],["🏫","schools"],["🏛️","governments"],["🏢","companies"]].forEach(([e,w])=>{const c=el("button","chip");c.type="button";c.append(el("span","e",e),w);c.onclick=()=>insert(ta,w+" should");c3.append(c)});
+   box.append(c3);
+  }
+  sec.append(box);
+ });
+ root.append(sec);
+});
+const who=document.getElementById("who");who.value=S.name||"";
+who.oninput=()=>{S.name=who.value;save()};
+function prog(){
+ const ids=Object.keys(areas);const d=ids.filter(k=>(areas[k].value||"").trim()).length;
+ document.getElementById("prog").textContent=d+" / "+ids.length+" done"+(d===ids.length?" 🎉":"");
+}
+prog();
+function buildPrint(){
+ const pr=document.getElementById("print");pr.textContent="";
+ pr.append(el("h1",null,"My Social Media Presentation"));
+ pr.append(el("div","by","By: "+(who.value.trim()||"__________")));
+ P.forEach(p=>{
+  const d=el("div","pp");d.style.setProperty("--c",p.c);d.style.setProperty("--t",p.ct);
+  d.append(el("h2",null,"Part "+(p.n==="3"?3:p.n)+" · "+p.t),el("div","q",p.q));
+  p.fields.forEach(f=>{
+   const v=(areas[f.id].value||"").trim()||"…";
+   const para=el("p",f.src?"src":null,(f.pre?f.pre+(f.src?": ":" "):"")+v);
+   d.append(para);
+  });
+  pr.append(d);
+ });
+}
+window.addEventListener("beforeprint",buildPrint);
+document.getElementById("pdf").onclick=()=>{buildPrint();window.print()};
+document.getElementById("clear").onclick=()=>{
+ if(!confirm("Delete everything and start again?"))return;
+ S={};save();who.value="";Object.values(areas).forEach(a=>a.value="");prog();
+};
+</script>
+</body>
+</html>
