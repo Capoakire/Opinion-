@@ -34,11 +34,17 @@ textarea:focus,input:focus{outline:3px solid var(--c);outline-offset:1px;border-
 .chip .e{margin-right:5px}
 .who .chip{border-color:var(--c)}
 .bar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:2px solid var(--line);padding:10px 16px;display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap}
-.bar .prog{font-weight:800;margin-right:auto;max-width:200px}
+.bar .prog{font-weight:800;margin-right:auto;max-width:280px}
 .btn{font:inherit;font-weight:800;border:0;border-radius:12px;padding:11px 18px;cursor:pointer}
 .btn.main{background:var(--c1);color:#fff}
 .btn.sec{background:#eef2fb;color:var(--ink)}
 .btn:focus-visible,.chip:focus-visible{outline:3px solid var(--c2);outline-offset:2px}
+.tools{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:6px}
+.cnt{font-weight:800;font-size:.92rem;color:var(--mute)}.cnt.ok{color:var(--t)}
+.btn.chk{background:var(--t);color:#fff;padding:6px 14px;font-size:.92rem}
+.res{margin-top:8px;font-size:.95rem}.res .ok{color:var(--t);font-weight:800}
+.res li{margin:4px 0}.res mark{background:var(--yellow);padding:0 3px;border-radius:4px}
+.note{font-size:.85rem;color:var(--mute);margin-top:4px}
 #print{display:none}
 @media print{
  @page{margin:16mm}
@@ -58,12 +64,13 @@ textarea:focus,input:focus{outline:3px solid var(--c);outline-offset:1px;border-
 <body>
 <main class="app">
  <h1>📣 My Social Media Presentation</h1>
- <p class="lead">Fill in each part. Tap the 🟡 chips to add words and sentence starters, then change them into your own ideas. Your work saves on this device automatically.</p>
+ <p class="lead">Fill in each part. Tap a 🟡 sentence frame. The [part in brackets] is selected: type your own words, or tap a 💡 word. Then press ✅ to check your English. Your work saves on this device automatically.</p>
  <label class="name"><strong>✏️ My name:</strong><input id="who" placeholder="Write your name" autocomplete="name"></label>
+ <p class="note">🔒 The ✅ Check button sends your text to languagetool.org, a free grammar tool. Do not write your full name or private information in the boxes.</p>
  <div id="parts"></div>
 </main>
 <div class="bar">
- <div class="prog" id="prog">0 / 6 done</div>
+ <div class="prog" id="prog">0 / 8 done</div>
  <button class="btn sec" id="clear">🗑️ Start again</button>
  <button class="btn main" id="pdf">📄 Download PDF</button>
 </div>
@@ -101,66 +108,130 @@ const P=[
   st:["I think parents should","I think schools should","I think governments should","I think companies should"],
   w:[["⏰","set time limits"],["🎓","teach students to check facts"],["🚫","ban phones in class"],["🔒","protect private information"],["🧹","remove harmful content"],["💬","talk with children about it"],["📵","have phone-free time at home"],["⚖️","make clear laws"]]}]}
 ];
-const KEY="smPresentationV1";let S={};
+const USE_ONLINE=true; // teachers: set to false to keep all text on the device (basic checks only)
+const FR={
+a1:["Social media is [apps and websites] where people [share photos and videos].","People use social media to [talk to friends].","Two popular examples are [TikTok] and [Instagram]."],
+a2:["I think social media is [good / bad] for [teenagers].","Social media can make people feel [happy / worried].","On the good side, people can [make new friends].","On the bad side, people [sleep less]."],
+a3:["that [students] [spend too much time online] because [reason].","This is a problem because [they sleep less].","For example, [some students use their phones at night].","As a result, [they are tired at school]."],
+b3:["According to [name of source], [fact].","A study by [name] shows that [fact].","I read in [name of website] that [fact].","In my experience, [example]."],
+a4:["that [people] [see fake news] because [reason].","This is a problem because [they believe it].","In addition, [young children can see bad content].","As a result, [they feel afraid]."],
+a5:["social media is [useful] but [dangerous] if [we use it too much].","the biggest problem is [cyberbullying].","we need [rules] because [they protect students]."],
+b5:["[parents / schools / governments / companies] should [action] so that [result].","[parents] should [talk with children] about [online safety]."]};
+FR.b4=FR.b3;
+const GOAL={a1:15,a2:20,a3:20,b3:10,a4:20,b4:10,a5:15,b5:12};
+P.forEach(p=>p.fields.forEach(f=>{f.st=FR[f.id];f.g=GOAL[f.id]}));
+P[4].fields[1].pre="I think";
+const KEY="smPresentationV2";let S={};
 try{S=JSON.parse(localStorage.getItem(KEY)||"{}")}catch(e){}
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
 const el=(t,c,x)=>{const n=document.createElement(t);if(c)n.className=c;if(x!=null)n.textContent=x;return n};
-const root=document.getElementById("parts");
-const areas={};
-function insert(ta,txt){
- const s=ta.selectionStart??ta.value.length,e=ta.selectionEnd??s,v=ta.value;
- const pre=v.slice(0,s),sp=pre&&!/\s$/.test(pre)?" ":"";
- ta.value=pre+sp+txt+" "+v.slice(e);
- const pos=(pre+sp+txt+" ").length;ta.focus();ta.setSelectionRange(pos,pos);
- ta.dispatchEvent(new Event("input"));
+const root=document.getElementById("parts"),areas={},fmap={};
+const HAS=/\[[^\]]*\]/;
+const wc=t=>(t.replace(/\[[^\]]*\]/g,"").match(/[A-Za-z0-9\u00C0-\u00FF]+(?:['’-][A-Za-z0-9]+)*/g)||[]).length;
+const full=(f,v)=>(f.pre&&!f.src?f.pre.replace(/^Reason \d — /,"")+" ":"")+v.trim();
+function nextBlank(ta,from){
+ const r=/\[[^\]]*\]/g;r.lastIndex=from;let m=r.exec(ta.value);
+ if(!m){r.lastIndex=0;m=r.exec(ta.value)}
+ if(m)ta.setSelectionRange(m.index,m.index+m[0].length);else ta.setSelectionRange(from,from);
 }
-P.forEach((p,i)=>{
+function insert(ta,txt){
+ if(!ta._f){ta.setSelectionRange(ta.value.length,ta.value.length);ta._f=1}
+ const s=ta.selectionStart,e=ta.selectionEnd,v=ta.value,pre=v.slice(0,s);
+ const rep=/^\[[^\]]*\]$/.test(v.slice(s,e));
+ let lead="",add=txt;
+ if(!rep){if(pre&&!/\s$/.test(pre))lead=" ";add=txt+" "}
+ ta.value=pre+lead+add+v.slice(e);
+ const pos=(pre+lead+add).length;ta.focus();
+ ta.dispatchEvent(new Event("input"));nextBlank(ta,pos);
+}
+const RULES=[[/\bpeoples\b/i,"“peoples” → people"],[/\binformations\b/i,"“informations” → information"],[/\badvices\b/i,"“advices” → advice"],[/\bchilds\b/i,"“childs” → children"],[/\bmore (better|easier|worse)\b/i,"Do not use “more” with better / easier / worse"],[/\b(people|students|teenagers|children|parents|friends) (is|was|has)\b/i,"With a plural noun use are / were / have"],[/\bsocial media are\b/i,"“social media” → social media is"],[/\bdont\b/i,"“dont” → don't"],[/\bcant\b/i,"“cant” → can't"],[/\bbecause of that (\w+) (is|are)\b/i,"After “because of” use a noun"]];
+function basic(f,raw,text){
+ if(!raw.trim())return["Write something first ✏️"];
+ if(HAS.test(raw))return["Replace the [ ] parts with your own words first."];
+ const o=[];
+ text.split(/(?<=[.!?])\s+/).forEach(s=>{if(/^[a-z]/.test(s))o.push("Start the sentence with a capital letter: “"+s.slice(0,22)+"…”")});
+ if(!/[.!?]["”)]?$/.test(text))o.push("End your sentence with a full stop (.)");
+ if(/(^|\s)i(\s|'|’)/.test(text))o.push("Write “I” with a capital letter.");
+ if(/ {2,}/.test(text))o.push("You have two spaces together.");
+ if(/\s[,.!?]/.test(text))o.push("No space before , . ! ?");
+ const rp=text.match(/\b(\w+)\s+\1\b/i);if(rp)o.push("Repeated word: “"+rp[1]+"”");
+ RULES.forEach(([r,m])=>{if(r.test(text))o.push(m)});
+ if(!f.src&&wc(raw)>=8&&!/\b(because|and|but|so|also|however|for example|as a result|in addition)\b/i.test(raw))o.push("Tip 💡 Use a linking word: because, and, but, so.");
+ return o;
+}
+async function online(text){
+ const c=new AbortController(),to=setTimeout(()=>c.abort(),8000);
+ try{
+  const r=await fetch("https://api.languagetool.org/v2/check",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:new URLSearchParams({text,language:"en-US"}),signal:c.signal});
+  if(!r.ok)return null;
+  return(await r.json()).matches.filter(m=>!(m.rule&&m.rule.category&&m.rule.category.id==="STYLE"));
+ }catch(e){return null}finally{clearTimeout(to)}
+}
+async function check(f,ta,res){
+ res.textContent="⏳ Checking…";
+ const text=full(f,ta.value),b=basic(f,ta.value,text);
+ const blocked=HAS.test(ta.value)||!ta.value.trim();
+ const m=(USE_ONLINE&&!blocked)?await online(text):null;
+ res.textContent="";const ul=el("ul");ul.style.cssText="margin:0;padding-left:20px";
+ b.forEach(x=>ul.append(el("li",null,"⚠️ "+x)));
+ (m||[]).slice(0,8).forEach(x=>{
+  const li=el("li");li.append("⚠️ ",el("mark",null,x.context.text.substr(x.context.offset,x.context.length))," — "+x.message);
+  if(x.replacements&&x.replacements.length)li.append(" → "+x.replacements.slice(0,3).map(r=>r.value).join(" / "));
+  ul.append(li);
+ });
+ if(!ul.children.length)res.append(el("div","ok","✅ Great! I can't see any problems."));else res.append(ul);
+ if(!blocked&&m===null)res.append(el("div","note","Online grammar check is not available now, so only basic checks were used."));
+}
+P.forEach(p=>{
  const sec=el("section");sec.style.setProperty("--c",p.c);sec.style.setProperty("--t",p.ct);
- const h=el("div","head"),b=el("div","badge",p.e);
- const hd=el("div");hd.append(el("h2",null,"Part "+(p.n==="3"?3:p.n)+" · "+p.t),el("p",null,p.q));
- h.append(b,hd);sec.append(h);
+ const h=el("div","head"),hd=el("div");
+ hd.append(el("h2",null,"Part "+(p.n==="3"?3:p.n)+" · "+p.t),el("p",null,p.q));
+ h.append(el("div","badge",p.e),hd);sec.append(h);
  p.fields.forEach(f=>{
   const box=el("div","field");
   if(f.pre)box.append(el("div","prefix",f.pre+(f.src?":":"")));
   const ta=el("textarea");ta.placeholder=f.ph;ta.value=S[f.id]||"";ta.setAttribute("aria-label",f.pre||p.q);
-  ta.oninput=()=>{S[f.id]=ta.value;save();prog()};areas[f.id]=ta;
-  box.append(ta);
-  box.append(el("div","hint","🟡 Sentence starters (tap to add)"));
+  ta.onfocus=()=>{ta._f=1};areas[f.id]=ta;box.append(ta);
+  const tools=el("div","tools"),cnt=el("span","cnt"),cb=el("button","btn chk","✅ Check my English");cb.type="button";
+  const res=el("div","res");res.setAttribute("aria-live","polite");
+  const upd=()=>{const n=wc(ta.value);cnt.textContent="📝 "+n+" / "+f.g+" words"+(n>=f.g?" ✅":"");cnt.className="cnt"+(n>=f.g?" ok":"")};
+  ta.oninput=()=>{S[f.id]=ta.value;save();upd();prog()};upd();
+  cb.onclick=()=>check(f,ta,res);
+  tools.append(cnt,cb);box.append(tools,res);
+  box.append(el("div","hint","🟡 Sentence frames — tap one, then type or tap words to fill the [ ] parts"));
   const c1=el("div","chips");
   f.st.forEach(s=>{const c=el("button","chip s",s);c.type="button";c.onclick=()=>insert(ta,s);c1.append(c)});
-  box.append(c1);
-  box.append(el("div","hint","💡 Word bank"));
+  box.append(c1,el("div","hint","💡 Word bank (fills the selected [ ])"));
   const c2=el("div","chips");
-  f.w.forEach(([e,w])=>{const c=el("button","chip");c.type="button";const s=el("span","e",e);c.append(s,w);c.onclick=()=>insert(ta,w);c2.append(c)});
+  f.w.forEach(([e,w])=>{const c=el("button","chip");c.type="button";c.append(el("span","e",e),w);c.onclick=()=>insert(ta,w);c2.append(c)});
   box.append(c2);
   if(f.who){
-   box.append(el("div","hint","👨‍👩‍👧 Who should act? (tap one)"));
+   box.append(el("div","hint","👨‍👩‍👧 Who should act? (tap one to fill the first [ ])"));
    const c3=el("div","chips who");
-   [["👨‍👩‍👧","parents"],["🏫","schools"],["🏛️","governments"],["🏢","companies"]].forEach(([e,w])=>{const c=el("button","chip");c.type="button";c.append(el("span","e",e),w);c.onclick=()=>insert(ta,w+" should");c3.append(c)});
+   [["👨‍👩‍👧","parents"],["🏫","schools"],["🏛️","governments"],["🏢","companies"]].forEach(([e,w])=>{const c=el("button","chip");c.type="button";c.append(el("span","e",e),w);c.onclick=()=>insert(ta,w);c3.append(c)});
    box.append(c3);
   }
   sec.append(box);
  });
  root.append(sec);
 });
-const who=document.getElementById("who");who.value=S.name||"";
-who.oninput=()=>{S.name=who.value;save()};
+const who=document.getElementById("who");who.value=S.name||"";who.oninput=()=>{S.name=who.value;save()};
+const total=()=>Object.values(areas).reduce((a,t)=>a+wc(t.value),0);
 function prog(){
- const ids=Object.keys(areas);const d=ids.filter(k=>(areas[k].value||"").trim()).length;
- document.getElementById("prog").textContent=d+" / "+ids.length+" done"+(d===ids.length?" 🎉":"");
+ const k=Object.keys(areas),d=k.filter(i=>areas[i].value.trim()).length;
+ document.getElementById("prog").textContent=d+" / "+k.length+" done · "+total()+" words"+(d===k.length?" 🎉":"");
 }
 prog();
 function buildPrint(){
  const pr=document.getElementById("print");pr.textContent="";
  pr.append(el("h1",null,"My Social Media Presentation"));
- pr.append(el("div","by","By: "+(who.value.trim()||"__________")));
+ pr.append(el("div","by","By: "+(who.value.trim()||"__________")+"  ·  Words: "+total()));
  P.forEach(p=>{
   const d=el("div","pp");d.style.setProperty("--c",p.c);d.style.setProperty("--t",p.ct);
   d.append(el("h2",null,"Part "+(p.n==="3"?3:p.n)+" · "+p.t),el("div","q",p.q));
   p.fields.forEach(f=>{
-   const v=(areas[f.id].value||"").trim()||"…";
-   const para=el("p",f.src?"src":null,(f.pre?f.pre+(f.src?": ":" "):"")+v);
-   d.append(para);
+   const v=areas[f.id].value.trim()||"…";
+   d.append(el("p",f.src?"src":null,(f.pre?f.pre+(f.src?": ":" "):"")+v));
   });
   pr.append(d);
  });
@@ -169,7 +240,7 @@ window.addEventListener("beforeprint",buildPrint);
 document.getElementById("pdf").onclick=()=>{buildPrint();window.print()};
 document.getElementById("clear").onclick=()=>{
  if(!confirm("Delete everything and start again?"))return;
- S={};save();who.value="";Object.values(areas).forEach(a=>a.value="");prog();
+ S={};save();who.value="";Object.values(areas).forEach(a=>{a.value="";a.dispatchEvent(new Event("input"))});
 };
 </script>
 </body>
