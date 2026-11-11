@@ -14,8 +14,6 @@ body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.5 Nunito,system-
 .app{max-width:780px;margin:0 auto;padding:24px 16px 120px}
 h1{font-size:clamp(1.8rem,5vw,2.6rem);line-height:1.1;margin:0 0 6px;font-weight:800}
 .lead{color:var(--mute);margin:0 0 18px}
-.name{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:22px}
-.name input{flex:1;min-width:200px;font:inherit;padding:10px 14px;border:2px solid var(--line);border-radius:12px;background:#fff}
 section{background:var(--card);border:2px solid var(--line);border-left:10px solid var(--c);border-radius:18px;padding:18px 18px 8px;margin-bottom:20px}
 .head{display:flex;gap:12px;align-items:center;margin-bottom:6px}
 .badge{flex:none;width:46px;height:46px;border-radius:50%;background:var(--c);display:grid;place-items:center;font-size:24px}
@@ -65,7 +63,7 @@ textarea:focus,input:focus{outline:3px solid var(--c);outline-offset:1px;border-
 <main class="app">
  <h1>📣 My Social Media Presentation</h1>
  <p class="lead">Fill in each part. Tap a 🟡 sentence frame. The [part in brackets] is selected: type your own words, or tap a 💡 word. Then press ✅ to check your English. Your work saves on this device automatically.</p>
- <p class="note">🔒 The ✅ Check button sends your text to languagetool.org, a free grammar tool. Do not write your full name or private information in the boxes.</p>
+ <p class="note">🔒 The ✅ Check button sends your text to languagetool.org, a free grammar tool. Do not write any private information (like names, addresses or school names) in the boxes.</p>
  <div id="parts"></div>
 </main>
 <div class="bar">
@@ -214,7 +212,6 @@ P.forEach(p=>{
  });
  root.append(sec);
 });
-const who=document.getElementById("who");who.value=S.name||"";who.oninput=()=>{S.name=who.value;save()};
 const total=()=>Object.values(areas).reduce((a,t)=>a+wc(t.value),0);
 function prog(){
  const k=Object.keys(areas),d=k.filter(i=>areas[i].value.trim()).length;
@@ -224,7 +221,7 @@ prog();
 function buildPrint(){
  const pr=document.getElementById("print");pr.textContent="";
  pr.append(el("h1",null,"My Social Media Presentation"));
- pr.append(el("div","by","By: "+(who.value.trim()||"__________")+"  ·  Words: "+total()));
+ pr.append(el("div","by","Words: "+total()));
  P.forEach(p=>{
   const d=el("div","pp");d.style.setProperty("--c",p.c);d.style.setProperty("--t",p.ct);
   d.append(el("h2",null,"Part "+(p.n==="3"?3:p.n)+" · "+p.t),el("div","q",p.q));
@@ -239,7 +236,7 @@ window.addEventListener("beforeprint",buildPrint);
 document.getElementById("pdf").onclick=()=>{buildPrint();window.print()};
 document.getElementById("clear").onclick=()=>{
  if(!confirm("Delete everything and start again?"))return;
- S={};save();who.value="";Object.values(areas).forEach(a=>{a.value="";a.dispatchEvent(new Event("input"))});
+ S={};save();Object.values(areas).forEach(a=>{a.value="";a.dispatchEvent(new Event("input"))});
 };
 </script>
 </body>
